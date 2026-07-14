@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#f6c98a">
+<title>Lantern Cove — Test Build</title>
+<style>
+  :root{
+    --sand:#f4dcae; --sand2:#e9c98c; --sea:#5aa9c9; --sea2:#3d8bb0;
+    --wood:#b5793f; --shell:#e79ab5; --seaC:#4bb3a6;
+    --ink:#3a2c22; --warm:#f6a94b; --panel:#fff7ea; --line:#e2c79a;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    color:var(--ink);
+    background:linear-gradient(#bfe6f2,#dff1f5 45%,var(--sand) 46%,var(--sand2));
+    -webkit-user-select:none;user-select:none;overflow-x:hidden;
+    max-width:520px;margin:0 auto;
+  }
+  header{padding:10px 12px 6px;text-align:center}
+  h1{font-size:19px;margin:0;letter-spacing:.3px}
+  h1 .sub{display:block;font-size:11px;font-weight:400;opacity:.7;letter-spacing:1px;text-transform:uppercase}
+
+  /* Cove scene */
+  .scene{position:relative;height:120px;margin:6px 10px 4px;border-radius:16px;overflow:hidden;
+    background:linear-gradient(#a9def0,#cdeaf3 55%,#7cc0d8 56%,#4f9fbe);
+    box-shadow:inset 0 -8px 0 rgba(0,0,0,.06),0 3px 8px rgba(0,0,0,.12)}
+  .scene .sun{position:absolute;top:12px;right:16px;font-size:26px;filter:drop-shadow(0 0 6px #ffe9a8)}
+  .scene .light{position:absolute;bottom:6px;left:18px;font-size:52px;filter:grayscale(.7) brightness(.8);transition:.6s}
+  .scene.restored .light{filter:none;filter:drop-shadow(0 0 10px #ffdf8a)}
+  .scene .beam{position:absolute;bottom:44px;left:44px;width:120px;height:20px;opacity:0;
+    background:linear-gradient(90deg,rgba(255,235,150,.85),transparent);transform:rotate(-8deg);transition:.6s}
+  .scene.restored .beam{opacity:.9}
+  .scene .cap{position:absolute;bottom:6px;right:12px;font-size:11px;background:rgba(255,255,255,.75);
+    padding:2px 8px;border-radius:10px;font-weight:600}
+  .scene .deco{position:absolute;bottom:4px;font-size:20px;opacity:0;transition:.5s}
+  .scene.restored .deco{opacity:1}
+
+  /* HUD */
+  .hud{display:flex;gap:8px;justify-content:center;margin:2px 10px 6px}
+  .chip{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:5px 12px;
+    font-weight:700;font-size:14px;display:flex;align-items:center;gap:5px;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+
+  /* Sources */
+  .sources{display:flex;gap:8px;justify-content:center;margin:2px 10px 8px}
+  .src{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px 4px 6px;
+    text-align:center;position:relative;overflow:hidden;box-shadow:0 2px 4px rgba(0,0,0,.1);cursor:pointer;
+    transition:transform .08s}
+  .src:active{transform:scale(.95)}
+  .src .ic{font-size:26px;display:block;line-height:1}
+  .src .nm{font-size:10px;opacity:.75;margin-top:2px;font-weight:600}
+  .src .cd{position:absolute;left:0;bottom:0;height:100%;width:0;background:rgba(90,169,201,.28);
+    transition:width .1s linear;pointer-events:none}
+  .src.cool{opacity:.85}
+
+  /* Board */
+  #board{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin:0 10px;padding:8px;
+    background:rgba(255,255,255,.35);border-radius:14px;border:1px solid rgba(255,255,255,.6);
+    box-shadow:inset 0 2px 6px rgba(0,0,0,.08)}
+  .cell{position:relative;aspect-ratio:1;border-radius:10px;background:rgba(255,247,234,.55);
+    border:1px solid rgba(226,199,154,.5);display:flex;align-items:center;justify-content:center;
+    font-size:min(7.5vw,34px);touch-action:none}
+  .cell.item{background:var(--panel);box-shadow:0 2px 3px rgba(0,0,0,.12);cursor:grab}
+  .cell.wood.item{background:linear-gradient(#fff7ea,#f6e4c8)}
+  .cell.shell.item{background:linear-gradient(#fff2f6,#fadbe6)}
+  .cell.sea.item{background:linear-gradient(#eafcf7,#cdf0e8)}
+  .cell .tier{position:absolute;top:2px;right:3px;font-size:9px;font-weight:800;opacity:.55}
+  .cell.drop{outline:2px dashed var(--warm);outline-offset:-2px}
+  .cell.pop{animation:pop .28s ease}
+  @keyframes pop{0%{transform:scale(.4)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+  .ghost{position:fixed;z-index:50;pointer-events:none;display:flex;align-items:center;justify-content:center;
+    font-size:34px;width:46px;height:46px;background:var(--panel);border-radius:10px;
+    box-shadow:0 6px 14px rgba(0,0,0,.28);transform:translate(-50%,-50%) scale(1.1);opacity:.96}
+
+  /* Orders */
+  .section{margin:10px 10px 0}
+  .section h2{font-size:12px;text-transform:uppercase;letter-spacing:1px;opacity:.6;margin:0 0 5px 4px}
+  .orders{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px}
+  .order{flex:0 0 auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:7px 9px;text-align:center;min-width:74px;box-shadow:0 1px 3px rgba(0,0,0,.1);transition:transform .1s}
+  .order.can{border-color:var(--warm);box-shadow:0 0 0 2px rgba(246,169,75,.35)}
+  .order:active{transform:scale(.94)}
+  .order .want{font-size:26px;line-height:1}
+  .order .lbl{font-size:9px;opacity:.7;margin:1px 0}
+  .order .pay{font-size:11px;font-weight:800;color:#c47a1a}
+
+  /* Restore panel */
+  .restore{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;
+    display:flex;align-items:center;gap:10px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+  .restore .big{font-size:30px}
+  .restore .info{flex:1}
+  .restore .info b{font-size:13px}
+  .restore .need{font-size:11px;opacity:.8;margin-top:2px}
+  .restore button{background:var(--warm);color:#fff;border:0;border-radius:10px;padding:9px 12px;
+    font-weight:800;font-size:12px;box-shadow:0 2px 0 #d98a2a}
+  .restore button:disabled{background:#d6c3a6;box-shadow:0 2px 0 #bfa982;opacity:.8}
+
+  /* buttons row */
+  .bar{display:flex;gap:8px;margin:10px}
+  .bar button{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;
+    font-weight:700;font-size:13px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+
+  /* Journal modal */
+  .modal{position:fixed;inset:0;background:rgba(40,30,20,.5);display:none;align-items:flex-end;z-index:60}
+  .modal.open{display:flex}
+  .sheet{background:var(--panel);width:100%;max-width:520px;margin:0 auto;border-radius:18px 18px 0 0;
+    padding:16px;max-height:80vh;overflow:auto}
+  .sheet h3{margin:0 0 4px}
+  .sheet .close{float:right;font-size:20px;opacity:.5;background:none;border:0}
+  .jentry{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+  .jentry .je{font-size:30px;filter:grayscale(1);opacity:.35}
+  .jentry.found .je{filter:none;opacity:1}
+  .jentry .jt b{font-size:13px}
+  .jentry .jt p{margin:1px 0 0;font-size:11px;opacity:.75}
+
+  .toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%) translateY(20px);
+    background:rgba(58,44,34,.94);color:#fff;padding:9px 16px;border-radius:20px;font-size:13px;
+    font-weight:600;opacity:0;transition:.25s;z-index:70;pointer-events:none;white-space:nowrap}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  footer{text-align:center;font-size:10px;opacity:.5;padding:8px 0 14px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Lantern Cove <span class="sub">Merge · Restore · Collect — test build</span></h1>
+</header>
+
+<div class="scene" id="scene">
+  <div class="sun">☀️</div>
+  <div class="beam"></div>
+  <div class="light">🗼</div>
+  <div class="deco" style="right:70px">⛵</div>
+  <div class="deco" style="right:44px">🐚</div>
+  <div class="cap" id="sceneCap">The cove is neglected…</div>
+</div>
+
+<div class="hud">
+  <div class="chip">🪙 <span id="coins">0</span></div>
+  <div class="chip">🦪 <span id="pearls">0</span></div>
+</div>
+
+<div class="sources" id="sources"></div>
+
+<div id="board"></div>
+
+<div class="section">
+  <h2>Cove Orders — tap to fulfil</h2>
+  <div class="orders" id="orders"></div>
+</div>
+
+<div class="section">
+  <h2>Restore the Cove</h2>
+  <div class="restore" id="restore"></div>
+</div>
+
+<div class="bar">
+  <button id="journalBtn">📖 Cove Journal</button>
+  <button id="resetBtn">↺ Reset test</button>
+</div>
+
+<div class="modal" id="journalModal">
+  <div class="sheet">
+    <button class="close" id="jClose">✕</button>
+    <h3>📖 Cove Journal</h3>
+    <p style="font-size:12px;opacity:.7;margin:.2em 0 10px">Merge sea life to its final form to discover it.</p>
+    <div id="journalList"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<footer>Prototype v0.1 · proves the core loop · not final art</footer>
+
+<script>
+"use strict";
+//------------------------------------------------------------------
+// Lantern Cove — core-loop test build. Single file, offline, saves locally.
+//------------------------------------------------------------------
+const COLS=6, ROWS=7, CELLS=COLS*ROWS;
+
+// Merge chains: index 0 = tier 1 (from a source) up to the final tier.
+const CHAINS={
+  wood:{ name:'Driftwood', color:'wood',
+    tiers:['🪵','🟫','🚪','🛖'],
+    names:['Driftwood','Planks','Door','Boathouse'] },
+  shell:{ name:'Shell', color:'shell',
+    tiers:['🐚','🪸','💠','🏵️'],
+    names:['Shell','Coral','Sea Gem','Decoration'] },
+  sea:{ name:'Sea life', color:'sea',
+    tiers:['🥚','🐟','🐠','🐬'],
+    names:['Fish Egg','Fry','Reef Fish','Dolphin'] },
+};
+// Sea creatures for the journal (tiers 2-4 of the sea chain)
+const JOURNAL=[
+  {tier:1,emoji:'🐟',name:'Silver Fry',fact:'Baby fish are called "fry" — a whole group is a "school".'},
+  {tier:2,emoji:'🐠',name:'Reef Fish',fact:'Reef fish can change colour to hide from predators.'},
+  {tier:3,emoji:'🐬',name:'Dolphin',fact:'Dolphins call each other by name using signature whistles!'},
+];
+
+const SOURCES=[
+  {chain:'wood', ic:'🌊', nm:'Driftwood Pile'},
+  {chain:'shell',ic:'🪺', nm:'Shell Bed'},
+  {chain:'sea',  ic:'💧', nm:'Tide Pool'},
+];
+const SRC_COOLDOWN=2200; // ms — generous, keeps the "no timers" promise
+
+// Landmark to restore (MVP: the Lighthouse)
+const LANDMARK={
+  name:'Lighthouse',
+  need:[ {chain:'wood',tier:2,qty:2}, {chain:'shell',tier:2,qty:2} ], // 2 Doors + 2 Sea Gems
+  reward:{coins:1200, pearls:5},
+};
+
+//------------------------------------------------------------------
+let S = load() || fresh();
+
+function fresh(){
+  return { board:new Array(CELLS).fill(null), coins:0, pearls:0,
+           orders:[], restored:false, journal:[], lastOrderPay:0 };
+}
+function load(){ try{return JSON.parse(localStorage.getItem('lanternCove'))}catch(e){return null} }
+function save(){ localStorage.setItem('lanternCove', JSON.stringify(S)); }
+
+const $=s=>document.querySelector(s);
+const boardEl=$('#board'), ordersEl=$('#orders'), coinsEl=$('#coins'), pearlsEl=$('#pearls');
+
+// deterministic-ish rng seed counter (Math.random is fine at runtime here)
+function rnd(n){ return Math.floor(Math.random()*n); }
+
+//---------------- board helpers ----------------
+function emptyCells(){ const a=[]; S.board.forEach((c,i)=>{if(!c)a.push(i)}); return a; }
+function addItem(chain,tier){
+  const empties=emptyCells();
+  if(!empties.length){ toast('Board is full! Merge some items.'); return false; }
+  const i=empties[rnd(empties.length)];
+  S.board[i]={chain,tier};
+  renderCell(i,true);
+  return true;
+}
+function maxTier(chain){ return CHAINS[chain].tiers.length; }
+
+//---------------- rendering ----------------
+function buildBoard(){
+  boardEl.innerHTML='';
+  for(let i=0;i<CELLS;i++){
+    const d=document.createElement('div');
+    d.className='cell'; d.dataset.i=i;
+    boardEl.appendChild(d);
+    renderCell(i);
+  }
+}
+function renderCell(i,pop){
+  const d=boardEl.children[i]; const it=S.board[i];
+  d.className='cell'+(it?' item '+CHAINS[it.chain].color:'');
+  if(it){
+    d.innerHTML=CHAINS[it.chain].tiers[it.tier-1]+'<span class="tier">'+it.tier+'</span>';
+    if(pop){ d.classList.add('pop'); setTimeout(()=>d.classList.remove('pop'),300); }
+  } else d.innerHTML='';
+}
+function renderHUD(){ coinsEl.textContent=S.coins; pearlsEl.textContent=S.pearls; }
+
+function buildSources(){
+  const wrap=$('#sources'); wrap.innerHTML='';
+  SOURCES.forEach((s,idx)=>{
+    const el=document.createElement('div'); el.className='src'; el.dataset.idx=idx;
+    el.innerHTML=`<span class="ic">${s.ic}</span><span class="nm">${s.nm}</span><span class="cd"></span>`;
+    el.addEventListener('click',()=>useSource(idx,el));
+    wrap.appendChild(el);
+  });
+}
+let cooldowns={};
+function useSource(idx,el){
+  if(cooldowns[idx]) return;
+  const s=SOURCES[idx];
+  if(!addItem(s.chain,1)) return;
+  // cooldown animation
+  cooldowns[idx]=true; el.classList.add('cool');
+  const cd=el.querySelector('.cd'); cd.style.transition='none'; cd.style.width='100%';
+  requestAnimationFrame(()=>{ cd.style.transition='width '+SRC_COOLDOWN+'ms linear'; cd.style.width='0%'; });
+  setTimeout(()=>{ cooldowns[idx]=false; el.classList.remove('cool'); },SRC_COOLDOWN);
+  save();
+}
+
+//---------------- drag & drop (pointer = works on touch) ----------------
+let drag=null;
+boardEl.addEventListener('pointerdown',e=>{
+  const cell=e.target.closest('.cell'); if(!cell) return;
+  const i=+cell.dataset.i; if(!S.board[i]) return;
+  const it=S.board[i];
+  drag={from:i, chain:it.chain, tier:it.tier};
+  const g=document.createElement('div'); g.className='ghost';
+  g.textContent=CHAINS[it.chain].tiers[it.tier-1]; g.id='ghost';
+  document.body.appendChild(g); moveGhost(e);
+  cell.style.opacity='.35';
+  boardEl.setPointerCapture(e.pointerId);
+});
+boardEl.addEventListener('pointermove',e=>{
+  if(!drag) return; moveGhost(e);
+  const t=cellUnder(e); document.querySelectorAll('.cell.drop').forEach(c=>c.classList.remove('drop'));
+  if(t && +t.dataset.i!==drag.from) t.classList.add('drop');
+});
+boardEl.addEventListener('pointerup',e=>{
+  if(!drag) return;
+  const g=$('#ghost'); if(g) g.remove();
+  boardEl.children[drag.from].style.opacity='';
+  document.querySelectorAll('.cell.drop').forEach(c=>c.classList.remove('drop'));
+  const t=cellUnder(e);
+  if(t){ const to=+t.dataset.i; if(to!==drag.from) doDrop(drag.from,to); }
+  drag=null;
+});
+function moveGhost(e){ const g=$('#ghost'); if(g){ g.style.left=e.clientX+'px'; g.style.top=e.clientY+'px'; } }
+function cellUnder(e){ const el=document.elementFromPoint(e.clientX,e.clientY); return el?el.closest('.cell'):null; }
+
+function doDrop(from,to){
+  const a=S.board[from], b=S.board[to];
+  if(!b){ S.board[to]=a; S.board[from]=null; renderCell(from); renderCell(to,true); save(); return; }
+  if(b.chain===a.chain && b.tier===a.tier && a.tier<maxTier(a.chain)){
+    S.board[to]={chain:a.chain,tier:a.tier+1}; S.board[from]=null;
+    renderCell(from); renderCell(to,true);
+    onMerge(a.chain,a.tier+1);
+    save();
+  } else { // swap
+    S.board[to]=a; S.board[from]=b; renderCell(from,true); renderCell(to,true); save();
+  }
+}
+function onMerge(chain,tier){
+  if(chain==='sea' && tier>=2){ discover(tier-1); }   // journal indexes tiers 2-4
+  refreshOrders(); refreshRestore();
+}
+
+//---------------- orders ----------------
+function makeOrder(){
+  // request tier 2 mostly, sometimes 3
+  const chain=['wood','shell','sea'][rnd(3)];
+  const tier=(rnd(10)<7)?2:3;
+  const pay=tier===2?90:240;
+  const bonusPearl=tier===3 && rnd(100)<25;
+  return {chain,tier,pay,pearl:bonusPearl?1:0};
+}
+function ensureOrders(){ while(S.orders.length<4) S.orders.push(makeOrder()); }
+function haveItem(chain,tier){ return S.board.some(c=>c&&c.chain===chain&&c.tier===tier); }
+function renderOrders(){
+  ensureOrders();
+  ordersEl.innerHTML='';
+  S.orders.forEach((o,idx)=>{
+    const can=haveItem(o.chain,o.tier);
+    const el=document.createElement('div'); el.className='order'+(can?' can':'');
+    el.innerHTML=`<div class="want">${CHAINS[o.chain].tiers[o.tier-1]}</div>
+      <div class="lbl">${CHAINS[o.chain].names[o.tier-1]}</div>
+      <div class="pay">🪙${o.pay}${o.pearl?' 🦪':''}</div>`;
+    el.addEventListener('click',()=>fulfil(idx));
+    ordersEl.appendChild(el);
+  });
+}
+function refreshOrders(){ renderOrders(); }
+function fulfil(idx){
+  const o=S.orders[idx];
+  const i=S.board.findIndex(c=>c&&c.chain===o.chain&&c.tier===o.tier);
+  if(i<0){ toast('Merge a '+CHAINS[o.chain].names[o.tier-1]+' first!'); return; }
+  S.board[i]=null; renderCell(i);
+  S.coins+=o.pay; S.pearls+=o.pearl; S.lastOrderPay=o.pay;
+  S.orders[idx]=makeOrder();
+  renderHUD(); renderOrders(); refreshRestore();
+  toast('Order filled! +'+o.pay+' 🪙'+(o.pearl?' +1 🦪':''));
+  save();
+}
+
+//---------------- restore ----------------
+function countItem(chain,tier){ return S.board.filter(c=>c&&c.chain===chain&&c.tier===tier).length; }
+function canRestore(){ return !S.restored && LANDMARK.need.every(n=>countItem(n.chain,n.tier)>=n.qty); }
+function renderRestore(){
+  const el=$('#restore');
+  if(S.restored){
+    el.innerHTML=`<div class="big">🗼</div><div class="info"><b>Lighthouse restored!</b>
+      <div class="need">The cove glows again. New areas coming in the full build. 🌟</div></div>`;
+    return;
+  }
+  const needTxt=LANDMARK.need.map(n=>{
+    const have=countItem(n.chain,n.tier);
+    return `${CHAINS[n.chain].tiers[n.tier-1]}${have}/${n.qty}`;
+  }).join('  ');
+  const ok=canRestore();
+  el.innerHTML=`<div class="big">🗼</div>
+    <div class="info"><b>Repair the ${LANDMARK.name}</b>
+      <div class="need">Needs: ${needTxt}</div></div>
+    <button id="doRestore" ${ok?'':'disabled'}>Restore</button>`;
+  $('#doRestore').addEventListener('click',doRestore);
+}
+function refreshRestore(){ renderRestore(); }
+function doRestore(){
+  if(!canRestore()) return;
+  // consume required items
+  LANDMARK.need.forEach(n=>{
+    let q=n.qty;
+    for(let i=0;i<CELLS && q>0;i++){ const c=S.board[i]; if(c&&c.chain===n.chain&&c.tier===n.tier){ S.board[i]=null; renderCell(i); q--; } }
+  });
+  S.restored=true; S.coins+=LANDMARK.reward.coins; S.pearls+=LANDMARK.reward.pearls;
+  $('#scene').classList.add('restored'); $('#sceneCap').textContent='The cove shines again! ✨';
+  renderHUD(); renderOrders(); renderRestore();
+  toast('🏮 Lighthouse restored! +'+LANDMARK.reward.coins+' 🪙 +'+LANDMARK.reward.pearls+' 🦪');
+  save();
+}
+
+//---------------- journal ----------------
+function discover(jTier){
+  if(!S.journal.includes(jTier)){ S.journal.push(jTier);
+    const j=JOURNAL.find(x=>x.tier===jTier);
+    if(j) toast('📖 Discovered: '+j.name+'!');
+    save();
+  }
+}
+function renderJournal(){
+  const list=$('#journalList'); list.innerHTML='';
+  JOURNAL.forEach(j=>{
+    const found=S.journal.includes(j.tier);
+    const d=document.createElement('div'); d.className='jentry'+(found?' found':'');
+    d.innerHTML=`<div class="je">${found?j.emoji:'❔'}</div>
+      <div class="jt"><b>${found?j.name:'???'}</b><p>${found?j.fact:'Merge sea life to discover.'}</p></div>`;
+    list.appendChild(d);
+  });
+}
+
+//---------------- misc ----------------
+let toastT;
+function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),1700); }
+
+$('#journalBtn').addEventListener('click',()=>{ renderJournal(); $('#journalModal').classList.add('open'); });
+$('#jClose').addEventListener('click',()=>$('#journalModal').classList.remove('open'));
+$('#journalModal').addEventListener('click',e=>{ if(e.target.id==='journalModal') e.currentTarget.classList.remove('open'); });
+$('#resetBtn').addEventListener('click',()=>{ if(confirm('Reset the test cove?')){ S=fresh(); save(); location.reload(); } });
+
+//---------------- boot ----------------
+function boot(){
+  buildBoard(); buildSources(); renderHUD(); renderOrders(); renderRestore();
+  if(S.restored){ $('#scene').classList.add('restored'); $('#sceneCap').textContent='The cove shines again! ✨'; }
+  // seed a couple of starter items so the board isn't empty on first play
+  if(S.board.every(c=>!c) && S.coins===0){ addItem('wood',1); addItem('shell',1); addItem('sea',1); }
+  save();
+}
+boot();
+</script>
+</body>
+</html>
