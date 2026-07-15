@@ -183,9 +183,9 @@
   <div class="l">🏮</div>
   <div class="lname">Lantern Cove</div>
   <div class="ltag">warming the lanterns…</div>
-  <div class="lver">v0.9 · read-aloud + ocean sound</div>
+  <div class="lver">v1.0 · vibrant reef</div>
 </div>
-<div id="ver">v0.9</div>
+<div id="ver">v1.0</div>
 
 <div class="top">
   <div class="brand">Lantern Cove<small>Explore · Dive · Chat with Marina</small></div>
@@ -820,6 +820,8 @@ function tick(){
     f.position.set(Math.cos(a)*f.userData.r, f.userData.y+Math.sin(t*1.5+f.userData.bob)*0.2, Math.sin(a)*f.userData.r);
     f.rotation.y=-a+(f.userData.sp>0?Math.PI:0);
     f.visible=under; });
+  // sea plants sway in the current
+  reefSway.forEach(p=>{ p.rotation.z=Math.sin(t*0.8+p.userData.ph)*0.18; });
   // placed dolphins/whales bob & drift
   animatedProps.forEach(p=>{ p.position.y=p.userData.baseY+0.6+Math.sin(t+p.userData.ph)*0.25;
     p.rotation.y=Math.sin(t*0.3+p.userData.ph)*0.5; });
