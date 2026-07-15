@@ -3,7 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<meta name="theme-color" content="#f2a65a">
+<meta name="theme-color" content="#38b6c9">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Lantern Cove</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -84,10 +87,18 @@
   .sheet{background:linear-gradient(#fff8ec,#fdeccd);width:100%;max-width:560px;margin:0 auto;
     border-radius:22px 22px 0 0;padding:14px 14px calc(env(safe-area-inset-bottom,0px) + 16px);
     max-height:86vh;overflow:auto;box-shadow:0 -6px 24px rgba(0,0,0,.35);border-top:3px solid var(--amber)}
-  .sheet h2{font-family:var(--disp);font-weight:800;margin:2px 0 2px;font-size:19px;display:flex;align-items:center;gap:7px;color:#3a2e22}
-  .sheet .sub{font-size:11.5px;opacity:.7;margin:0 0 10px}
+  .sheet h2{font-family:var(--disp);font-weight:800;margin:2px 0 2px;font-size:18px;display:flex;align-items:center;gap:7px;color:#3a2e22}
+  .sheet .sub{font-size:11px;opacity:.7;margin:0 0 8px}
   .sheet .x{float:right;font-size:22px;opacity:.5;background:none;border:0;line-height:1}
-  .lab{font-size:10.5px;text-transform:uppercase;letter-spacing:1px;opacity:.55;font-weight:700;margin:12px 2px 6px}
+  .sheet .grab{width:46px;height:5px;border-radius:3px;background:var(--line);margin:-2px auto 8px}
+  .lab{font-size:10px;text-transform:uppercase;letter-spacing:1px;opacity:.55;font-weight:700;margin:9px 2px 5px}
+
+  /* Workshop = compact TOGGLE drawer: slides on/off, never covers the whole screen */
+  #sheet{background:transparent;pointer-events:none;display:flex}
+  #sheet .sheet{pointer-events:auto;max-height:54vh;
+    transform:translateY(112%);transition:transform .34s cubic-bezier(.34,1.2,.5,1);
+    box-shadow:0 -10px 34px rgba(60,40,15,.32)}
+  #sheet.open .sheet{transform:translateY(0)}
 
   .sources{display:flex;gap:6px}
   .src{flex:1;background:#fff;border:1px solid var(--line);border-radius:13px;padding:8px 2px 6px;text-align:center;
@@ -149,14 +160,18 @@
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
   #loading{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
-    flex-direction:column;gap:4px;color:#3a2a2a;transition:opacity .6s;
-    background:radial-gradient(120% 80% at 50% 30%,#ffe3ab,#ffc27e 45%,#f2896b 82%,#c76a86)}
-  #loading .l{font-size:52px;filter:drop-shadow(0 0 22px rgba(255,179,71,.9));animation:bob 1.9s ease-in-out infinite}
-  #loading .lname{font-family:var(--disp);font-weight:800;font-size:30px;color:#4a2b1e;letter-spacing:.3px;
+    flex-direction:column;gap:4px;color:#0e4a5a;transition:opacity .6s;
+    background:linear-gradient(#7fcdee,#a9e2ef 46%,#d9f0e2 66%,#f6e7c4)}
+  #loading .l{font-size:52px;filter:drop-shadow(0 0 22px rgba(255,224,150,.95));animation:bob 1.9s ease-in-out infinite}
+  #loading .lname{font-family:var(--disp);font-weight:800;font-size:30px;color:#0e4a5a;letter-spacing:.3px;
     text-shadow:0 2px 0 rgba(255,255,255,.35)}
   #loading .ltag{font-family:var(--body);font-weight:700;font-size:12px;letter-spacing:2px;text-transform:uppercase;
     color:#7a4a35;opacity:.8}
   #loading.hide{opacity:0}
+  #loading .lver{margin-top:6px;font-family:var(--body);font-weight:800;font-size:11px;letter-spacing:1px;
+    color:#fff;background:rgba(0,0,0,.18);padding:3px 10px;border-radius:10px}
+  #ver{position:fixed;left:8px;bottom:6px;z-index:8;font-family:var(--body);font-weight:700;font-size:10px;
+    color:rgba(255,255,255,.6);text-shadow:0 1px 2px rgba(0,0,0,.5);pointer-events:none}
   @keyframes bob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-10px) rotate(3deg)}}
 </style>
 </head>
@@ -168,7 +183,9 @@
   <div class="l">🏮</div>
   <div class="lname">Lantern Cove</div>
   <div class="ltag">warming the lanterns…</div>
+  <div class="lver">v0.8 · tropical</div>
 </div>
+<div id="ver">v0.8</div>
 
 <div class="top">
   <div class="brand">Lantern Cove<small>Explore · Dive · Chat with Marina</small></div>
@@ -194,9 +211,10 @@
 
 <div class="sheetwrap" id="sheet">
   <div class="sheet">
+    <div class="grab"></div>
     <button class="x" id="sheetX">✕</button>
-    <h2>🔨 Beachcomber's Workshop</h2>
-    <p class="sub">Tap a spot to gather, then drag two matching pieces together to combine. Finished creations go to your <b>Place</b> pouch — set them around the cove.</p>
+    <h2>🔨 Workshop</h2>
+    <p class="sub">Tap a spot to gather, drag two matching pieces together to combine. Finished creations go to your <b>Place</b> pouch.</p>
     <div class="lab">Gather</div>
     <div class="sources" id="sources"></div>
     <div id="board"></div>
@@ -301,14 +319,14 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(55,1,0.1,300);
 
-// "Golden Hour at the Cove" — warm sunset above, teal-gold depths below.
-const SKY=new THREE.Color(0xffc98a), DEEP=new THREE.Color(0x1a7d94);
+// "Bright Tropical Cove" — clear blue sky, turquoise lagoon, white sand.
+const SKY=new THREE.Color(0x9fd8ef), DEEP=new THREE.Color(0x1591ab);
 scene.background=SKY.clone();          // clear colour (behind the sky dome; shown underwater)
-scene.fog=new THREE.Fog(0xffc79a, 46, 150);
+scene.fog=new THREE.Fog(0xd6f0f7, 55, 175);
 
-// --- gradient sky dome (zenith lilac → peach → warm rose at horizon) ---
+// --- gradient sky dome (deep blue zenith → bright sky → pale horizon haze) ---
 const skyGeo=new THREE.SphereGeometry(240,32,20);
-const zenith=new THREE.Color(0x9db4de), horizon=new THREE.Color(0xffb27a), midsky=new THREE.Color(0xffcf9a);
+const zenith=new THREE.Color(0x2f8fd8), midsky=new THREE.Color(0x74c3ee), horizon=new THREE.Color(0xdff4fb);
 const cols=[];
 for(let i=0;i<skyGeo.attributes.position.count;i++){
   const y=skyGeo.attributes.position.getY(i)/240;      // -1..1
@@ -321,26 +339,24 @@ skyGeo.setAttribute('color',new THREE.Float32BufferAttribute(cols,3));
 const sky=new THREE.Mesh(skyGeo,new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.BackSide,fog:false}));
 scene.add(sky);
 
-// --- low golden sun sitting over the cove, with a soft glow halo ---
-const sunPos=new THREE.Vector3(5,10,-95);
-const sunDisc=new THREE.Mesh(new THREE.SphereGeometry(6,20,20),
-  new THREE.MeshBasicMaterial({color:0xfff1c4,fog:false})); sunDisc.position.copy(sunPos); scene.add(sunDisc);
+// --- bright high sun with a soft glow ---
+const sunPos=new THREE.Vector3(26,52,-70);
+const sunDisc=new THREE.Mesh(new THREE.SphereGeometry(5,20,20),
+  new THREE.MeshBasicMaterial({color:0xfffdf2,fog:false})); sunDisc.position.copy(sunPos); scene.add(sunDisc);
 function glowSprite(size,color,opacity){
   const cv=document.createElement('canvas'); cv.width=cv.height=128;
   const g=cv.getContext('2d'), grd=g.createRadialGradient(64,64,0,64,64,64);
-  grd.addColorStop(0,color); grd.addColorStop(1,'rgba(255,200,120,0)');
+  grd.addColorStop(0,color); grd.addColorStop(1,'rgba(255,255,255,0)');
   g.fillStyle=grd; g.fillRect(0,0,128,128);
   const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),
     transparent:true,opacity,depthWrite:false,fog:false})); sp.scale.set(size,size,1); return sp;
 }
-const sunGlow=glowSprite(70,'rgba(255,224,150,0.9)',0.9); sunGlow.position.copy(sunPos); scene.add(sunGlow);
+const sunGlow=glowSprite(48,'rgba(255,252,235,0.95)',0.85); sunGlow.position.copy(sunPos); scene.add(sunGlow);
 
-// warm key light from the sun direction + soft sky fill
-const sun=new THREE.DirectionalLight(0xffdca0,1.25); sun.position.copy(sunPos).setY(24); scene.add(sun);
-const hemi=new THREE.HemisphereLight(0xffe7c2,0x2a5f6b,0.75); scene.add(hemi);
-scene.add(new THREE.AmbientLight(0x6a5a55,0.32));
-// a soft coral rim light from the opposite side for depth
-const rim=new THREE.DirectionalLight(0xff9a6b,0.35); rim.position.set(30,12,40); scene.add(rim);
+// bright daylight key + sky fill
+const sun=new THREE.DirectionalLight(0xfff6e2,1.35); sun.position.copy(sunPos); scene.add(sun);
+const hemi=new THREE.HemisphereLight(0xdff3ff,0x3f7a6b,0.9); scene.add(hemi);
+scene.add(new THREE.AmbientLight(0x8fb6c0,0.4));
 
 // --- low-poly drifting clouds ---
 const clouds=[];
@@ -378,24 +394,27 @@ light.add(beacon);
 light.position.set(-6,0,-10.5); light.scale.setScalar(1.05); light.rotation.y=0.6; scene.add(light);
 
 /* --- ground: sand everywhere, with a scooped lagoon in the middle --- */
-const sandMat=new THREE.MeshStandardMaterial({color:0xf0d9a0,roughness:1});
+const sandMat=new THREE.MeshStandardMaterial({color:0xf6e7c4,roughness:1});   // pale tropical sand
 // beach is a ring around the open lagoon so the cove water shows through the middle
 const sand=new THREE.Mesh(new THREE.RingGeometry(WATER_R-1.5,WORLD_R,72),sandMat);
 sand.rotation.x=-Math.PI/2; sand.position.y=0; scene.add(sand);
-// damp shoreline band where sand meets the water
+// bright wet-sand shoreline + a white foam ring where water meets beach
 const slope=new THREE.Mesh(new THREE.RingGeometry(WATER_R-1.5,WATER_R+1.5,72),
-  new THREE.MeshStandardMaterial({color:0xd9b877,roughness:1}));
+  new THREE.MeshStandardMaterial({color:0xf2ecd2,roughness:1}));
 slope.rotation.x=-Math.PI/2; slope.position.y=-0.03; scene.add(slope);
+const foam=new THREE.Mesh(new THREE.RingGeometry(WATER_R-1.1,WATER_R+0.5,72),
+  new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,transparent:true,opacity:0.8}));
+foam.rotation.x=-Math.PI/2; foam.position.y=0.02; scene.add(foam);
 
-// seabed under the lagoon
+// seabed under the lagoon — pale sand so shallow water reads bright aqua
 const seabed=new THREE.Mesh(new THREE.CircleGeometry(WATER_R+1,48),
-  new THREE.MeshStandardMaterial({color:0xe6cf95,roughness:1}));
+  new THREE.MeshStandardMaterial({color:0xf1e6b8,roughness:1}));
 seabed.rotation.x=-Math.PI/2; seabed.position.y=SEABED_Y; scene.add(seabed);
 
-/* --- water surface (translucent, gentle waves) --- */
-const waterGeo=new THREE.CircleGeometry(WATER_R,60,0,Math.PI*2);
-const waterMat=new THREE.MeshStandardMaterial({color:0x3fb0d6,transparent:true,opacity:0.62,
-  roughness:0.25,metalness:0.0,side:THREE.DoubleSide});
+/* --- water surface: vivid turquoise, gentle waves --- */
+const waterGeo=new THREE.CircleGeometry(WATER_R,64,0,Math.PI*2);
+const waterMat=new THREE.MeshStandardMaterial({color:0x1fc3d6,transparent:true,opacity:0.72,
+  roughness:0.18,metalness:0.05,side:THREE.DoubleSide});
 const water=new THREE.Mesh(waterGeo,waterMat); water.rotation.x=-Math.PI/2; water.position.y=-0.05;
 scene.add(water);
 const wPos=waterGeo.attributes.position, wBase=Float32Array.from(wPos.array);
@@ -832,11 +851,13 @@ function fulfil(idx){ const o=S.orders[idx];
   consume(o.chain,o.tier,1); S.coins+=o.pay; S.pearls+=o.pearl; S.orders[idx]=makeOrder();
   renderHUD(); renderOrders(); toast('Order filled! +'+o.pay+' 🪙'+(o.pearl?' +1 🦪':'')); save(); }
 
-// sheet open/close
+// Workshop drawer — toggles on/off with the button, cove stays visible above it
 const sheet=$('#sheet');
-$('#workBtn').addEventListener('click',()=>{ renderOrders(); sheet.classList.add('open'); });
-$('#sheetX').addEventListener('click',()=>sheet.classList.remove('open'));
-sheet.addEventListener('click',e=>{ if(e.target.id==='sheet') sheet.classList.remove('open'); });
+function closeWork(){ sheet.classList.remove('open'); }
+function openWork(){ renderOrders(); sheet.classList.add('open'); }
+$('#workBtn').addEventListener('click',()=>{ sheet.classList.contains('open')?closeWork():openWork(); });
+$('#sheetX').addEventListener('click',closeWork);
+sheet.querySelector('.grab').addEventListener('click',closeWork);
 $('#resetBtn').addEventListener('click',()=>{ if(confirm('Reset the whole cove? This clears your build and placed items.')){
   localStorage.removeItem('lanternCoveV4'); location.reload(); } });
 
