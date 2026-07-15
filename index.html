@@ -183,9 +183,9 @@
   <div class="l">🏮</div>
   <div class="lname">Lantern Cove</div>
   <div class="ltag">warming the lanterns…</div>
-  <div class="lver">v0.8 · tropical</div>
+  <div class="lver">v0.9 · read-aloud + ocean sound</div>
 </div>
-<div id="ver">v0.8</div>
+<div id="ver">v0.9</div>
 
 <div class="top">
   <div class="brand">Lantern Cove<small>Explore · Dive · Chat with Marina</small></div>
@@ -200,13 +200,14 @@
 <div class="stick" id="stick"><i id="stickNub"></i></div>
 
 <div class="work">
-  <button class="workbtn" id="workBtn">🔨 Workshop</button>
-  <button class="workbtn" id="talkBtn" style="margin-top:8px">💬 Talk to Marina</button>
+  <button class="workbtn" id="workBtn" data-say="Workshop. Build things for your cove.">🔨 Workshop</button>
+  <button class="workbtn" id="talkBtn" style="margin-top:8px" data-say="Talk to Marina, the cove keeper.">💬 Talk to Marina</button>
+  <button class="workbtn" id="ttsBtn" style="margin-top:8px;background:#fff;box-shadow:0 3px 0 #d9a86a">🔊 Read aloud: On</button>
 </div>
 
 <div class="acts">
-  <button class="btn place" id="placeBtn"><span class="em">📍</span>Place<span class="cnt" id="placeCnt" style="display:none">0</span></button>
-  <button class="btn dive" id="diveBtn"><span class="em">🤿</span>Dive</button>
+  <button class="btn place" id="placeBtn" data-say="Place. Put your creation on the beach or reef."><span class="em">📍</span>Place<span class="cnt" id="placeCnt" style="display:none">0</span></button>
+  <button class="btn dive" id="diveBtn" data-say="Dive underwater to the coral reef."><span class="em">🤿</span>Dive</button>
 </div>
 
 <div class="sheetwrap" id="sheet">
@@ -419,6 +420,20 @@ const water=new THREE.Mesh(waterGeo,waterMat); water.rotation.x=-Math.PI/2; wate
 scene.add(water);
 const wPos=waterGeo.attributes.position, wBase=Float32Array.from(wPos.array);
 
+/* --- open ocean stretching to the horizon (so looking out to sea matches a real beach) --- */
+const oceanGeo=new THREE.RingGeometry(WATER_R+6,230,80,1);
+const ocol=[], near=new THREE.Color(0x1ba9c9), farc=new THREE.Color(0x0d5f86);
+for(let i=0;i<oceanGeo.attributes.position.count;i++){
+  const x=oceanGeo.attributes.position.getX(i), y=oceanGeo.attributes.position.getY(i);
+  const r=Math.hypot(x,y), tt=clamp((r-(WATER_R+6))/(230-(WATER_R+6)),0,1);
+  const c=near.clone().lerp(farc,Math.pow(tt,0.6)); ocol.push(c.r,c.g,c.b);
+}
+oceanGeo.setAttribute('color',new THREE.Float32BufferAttribute(ocol,3));
+const ocean=new THREE.Mesh(oceanGeo,new THREE.MeshStandardMaterial({vertexColors:true,roughness:0.35,metalness:0.15}));
+ocean.rotation.x=-Math.PI/2; ocean.position.y=-0.12; scene.add(ocean);
+const oPos=ocean.geometry.attributes.position, oBase=Float32Array.from(oPos.array);
+
+
 /* --- wooden dock leading into the cove --- */
 const dock=new THREE.Group();
 const plankMat=new THREE.MeshStandardMaterial({color:0xb5793f,roughness:.9});
@@ -615,11 +630,13 @@ keeper.add(new THREE.PointLight(0xffb84d,0.5,6).translateY(1).translateX(0.5));
 keeper.position.set(DOCK_HW+0.15, DOCK_Y, DOCK_Z0+0.6); keeper.rotation.y=-0.7;
 scene.add(keeper);
 
-/* --- camera follow --- */
-// low, cinematic over-the-shoulder cam so the sunset horizon + cove fill the phone screen
-const ABOVE_OFF=new THREE.Vector3(0,6.5,12.5), UNDER_OFF=new THREE.Vector3(0,5,10);
-const camPos=new THREE.Vector3().copy(hero.position).add(ABOVE_OFF);
-camera.position.copy(camPos);
+/* --- first-person camera: you are standing IN the cove, looking around freely --- */
+// eye height above the ground the hero is standing on
+const EYE_ABOVE=1.55, EYE_UNDER=1.1;
+// look angles — yaw around Y (0 = facing into the cove/-Z), pitch up/down
+let yaw=0, pitch=-0.05;
+// you don't see your own body in first person
+hero.visible=false; heroShadow.visible=false;
 
 /* ---------------- input ---------------- */
 const move=new THREE.Vector2(0,0);   // x = right, y = forward(-z)
@@ -641,6 +658,17 @@ stick.addEventListener('pointerdown',e=>{ stickId=e.pointerId; stick.setPointerC
 stick.addEventListener('pointermove',e=>{ if(e.pointerId===stickId) stickVec(e); });
 function stickEnd(e){ if(e.pointerId===stickId){ stickId=null; move.set(0,0); nub.style.transform='translate(0,0)'; } }
 stick.addEventListener('pointerup',stickEnd); stick.addEventListener('pointercancel',stickEnd);
+
+// look-around: drag anywhere on the world (canvas sits behind the UI, so buttons/stick aren't hijacked)
+let lookId=null, lookX=0, lookY=0; const LOOK_SENS=0.0042;
+canvas.addEventListener('pointerdown',e=>{ lookId=e.pointerId; lookX=e.clientX; lookY=e.clientY; canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener('pointermove',e=>{ if(e.pointerId!==lookId) return;
+  yaw   += (e.clientX-lookX)*LOOK_SENS;                       // drag right → look right
+  pitch += (e.clientY-lookY)*-LOOK_SENS;                      // drag up → look up
+  pitch = clamp(pitch,-1.15,1.15);
+  lookX=e.clientX; lookY=e.clientY; });
+function lookEnd(e){ if(e.pointerId===lookId) lookId=null; }
+canvas.addEventListener('pointerup',lookEnd); canvas.addEventListener('pointercancel',lookEnd);
 
 /* ---------------- dive / place ---------------- */
 let under=false;
@@ -686,22 +714,23 @@ placeBtn.addEventListener('click',()=>{
 function resize(){ const w=innerWidth,h=innerHeight; renderer.setSize(w,h); camera.aspect=w/h; camera.updateProjectionMatrix(); }
 addEventListener('resize',resize); resize();
 
-const clock=new THREE.Clock(); const fwd=new THREE.Vector3(); const tmp=new THREE.Vector3();
-let curOff=ABOVE_OFF.clone();
+const clock=new THREE.Clock(); const tmp=new THREE.Vector3();
+let curEye=EYE_ABOVE;
 function tick(){
   const dt=Math.min(clock.getDelta(),0.05), t=clock.elapsedTime;
 
-  // movement (camera is fixed-angle: up = -z, right = +x)
-  let mx=move.x, mz=-move.y;
-  if(keys['w']||keys['arrowup']) mz-=1; if(keys['s']||keys['arrowdown']) mz+=1;
-  if(keys['a']||keys['arrowleft']) mx-=1; if(keys['d']||keys['arrowright']) mx+=1;
-  const len=Math.hypot(mx,mz);
+  // movement relative to where you're looking: stick-up / W = walk toward your gaze
+  let f=move.y, s=move.x;
+  if(keys['w']||keys['arrowup']) f+=1; if(keys['s']||keys['arrowdown']) f-=1;
+  if(keys['a']||keys['arrowleft']) s-=1; if(keys['d']||keys['arrowright']) s+=1;
+  const len=Math.hypot(f,s);
   if(len>0.05){
-    mx/=Math.max(1,len); mz/=Math.max(1,len);
+    f/=Math.max(1,len); s/=Math.max(1,len);
+    const sy=Math.sin(yaw), cy=Math.cos(yaw);
+    const mx=sy*f + cy*s, mz=-cy*f + sy*s;   // forward=(sin,-cos), right=(cos,sin)
     const speed=(under?4.2:6.0)*dt;
     hero.position.x=clamp(hero.position.x+mx*speed,-WORLD_R+3,WORLD_R-3);
     hero.position.z=clamp(hero.position.z+mz*speed,-WORLD_R+3,WORLD_R-3);
-    hero.rotation.y=Math.atan2(mx,mz);
   }
 
   // vertical placement: on dock (dry), diving (deep), wading, or dry sand
@@ -718,13 +747,14 @@ function tick(){
   heroShadow.position.set(hero.position.x, (under?SEABED_Y:0)+0.02, hero.position.z);
   heroShadow.material.opacity = under?0.12:0.18;
 
-  // camera easing between above/under framing
-  const wantOff = under?UNDER_OFF:ABOVE_OFF;
-  curOff.lerp(wantOff,Math.min(1,dt*3));
-  tmp.copy(hero.position).add(curOff);
-  camera.position.lerp(tmp,Math.min(1,dt*4));
-  // look past the hero toward the cove & horizon (lifts the sunset sky into frame above water)
-  camera.lookAt(hero.position.x*0.5, hero.position.y+(under?0.6:2.6), hero.position.z-(under?1:7));
+  // first-person: camera sits at eye height and looks wherever you've dragged to
+  const wantEye = under?EYE_UNDER:EYE_ABOVE;
+  curEye += (wantEye-curEye)*Math.min(1,dt*3);
+  const headbob = Math.sin(t*(under?2:9))*(len>0.05?(under?0.03:0.05):0.0) + Math.sin(t*0.6)*(under?0.02:0.035);
+  camera.position.set(hero.position.x, hero.position.y+curEye+headbob, hero.position.z);
+  const cp=Math.cos(pitch);
+  tmp.set(Math.sin(yaw)*cp, Math.sin(pitch), -Math.cos(yaw)*cp).add(camera.position);
+  camera.lookAt(tmp);
 
   // atmosphere: golden-hour surface vs teal-gold depths
   sky.visible=!under; sunDisc.visible=!under; sunGlow.visible=!under; light.visible=!under;
@@ -743,7 +773,12 @@ function tick(){
     wPos.setZ(i, Math.sin(x*0.4+t*1.3)*0.12 + Math.cos(y*0.5+t*1.0)*0.12);
   }
   wPos.needsUpdate=true;
+  for(let i=0;i<oPos.count;i++){ const x=oBase[i*3], y=oBase[i*3+1];
+    oPos.setZ(i, Math.sin(x*0.08+t*0.9)*0.35 + Math.cos(y*0.09+t*0.7)*0.35); }
+  oPos.needsUpdate=true;
   waterMat.opacity = under?0.25:0.62;
+  // muffle the ocean when we dive under
+  if(window.__lc_ambFilter){ const f=window.__lc_ambFilter(); if(f) f.frequency.value += ((under?180:520)-f.frequency.value)*Math.min(1,dt*2); }
 
   // reef fish swim
   fishes.forEach(f=>{ const a=t*f.userData.sp+f.userData.off;
@@ -880,7 +915,73 @@ const chatEl=$('#chat'), logEl=$('#chatLog'), inputEl=$('#chatInput'), sendEl=$(
 let chatHist=[], chatBusy=false, greeted=false;
 const CHIPS=["Hi Marina!","Tell me about the reef 🪸","What should I build?","Share a sea fact!","Are there dolphins? 🐬"];
 function addMsg(who,text){ const d=document.createElement('div'); d.className='msg '+who; d.textContent=text;
-  logEl.appendChild(d); logEl.scrollTop=logEl.scrollHeight; return d; }
+  logEl.appendChild(d); logEl.scrollTop=logEl.scrollHeight;
+  if(who==='her') speak(text);   // Marina speaks her replies aloud for pre-readers
+  return d; }
+
+/* ---------- Read-aloud (for children who can't read yet) ---------- */
+let readAloud = localStorage.getItem('lc_tts')!=='off';
+let _voices=[];
+function loadVoices(){ try{ _voices=speechSynthesis.getVoices()||[]; }catch(e){} }
+if('speechSynthesis' in window){ loadVoices(); speechSynthesis.onvoiceschanged=loadVoices; }
+function pickVoice(){
+  return _voices.find(v=>/^en/i.test(v.lang)&&/female|samantha|karen|zira|google us english|aria/i.test(v.name))
+      || _voices.find(v=>/^en/i.test(v.lang)) || _voices[0];
+}
+function speak(text){
+  if(!readAloud || !('speechSynthesis' in window) || !text) return;
+  try{
+    const clean=String(text).replace(/[^\p{L}\p{N}\s.,!?'"-]/gu,'').replace(/\s+/g,' ').trim();
+    if(!clean) return;
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(clean);
+    const v=pickVoice(); if(v) u.voice=v;
+    u.rate=0.92; u.pitch=1.08; u.volume=1;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+function updateTtsBtn(){ const b=$('#ttsBtn'); if(b) b.textContent = readAloud?'🔊 Read aloud: On':'🔇 Read aloud: Off'; }
+$('#ttsBtn').addEventListener('click',()=>{
+  readAloud=!readAloud; try{localStorage.setItem('lc_tts', readAloud?'on':'off');}catch(e){}
+  updateTtsBtn();
+  if(readAloud) speak('Read aloud is on. I will read things out loud for you.');
+  else { try{speechSynthesis.cancel();}catch(e){} }
+});
+updateTtsBtn();
+// tapping any labelled button says what it is, so a pre-reader can navigate by ear
+document.querySelectorAll('[data-say]').forEach(el=>{
+  el.addEventListener('click',()=>speak(el.getAttribute('data-say')));
+});
+
+/* ---------- Ambient ocean (procedural — no audio files needed) ---------- */
+let _actx, _ambStarted=false, _ambFilter=null, _primed=false;
+function startAmbient(){
+  if(_ambStarted) return; _ambStarted=true;
+  try{
+    _actx=new (window.AudioContext||window.webkitAudioContext)();
+    const sr=_actx.sampleRate, buf=_actx.createBuffer(1,sr*3,sr), data=buf.getChannelData(0);
+    let b0=0,b1=0,b2=0;
+    for(let i=0;i<data.length;i++){ const w=Math.random()*2-1;
+      b0=0.997*b0+0.0299*w; b1=0.985*b1+0.032*w; b2=0.95*b2+0.048*w;
+      data[i]=(b0+b1+b2+w*0.12)*0.09; }
+    const src=_actx.createBufferSource(); src.buffer=buf; src.loop=true;
+    const lp=_actx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=520;
+    const g=_actx.createGain(); g.gain.value=0.08;
+    src.connect(lp); lp.connect(g); g.connect(_actx.destination); src.start();
+    // slow swell so the waves breathe in and out
+    const lfo=_actx.createOscillator(); lfo.frequency.value=0.13;
+    const lfoG=_actx.createGain(); lfoG.gain.value=0.055;
+    lfo.connect(lfoG); lfoG.connect(g.gain); lfo.start();
+    _ambFilter=lp;
+  }catch(e){ _ambStarted=false; }
+}
+window.__lc_ambFilter=()=>_ambFilter;
+function onFirstGesture(){
+  startAmbient();
+  if(_actx&&_actx.state==='suspended'){ try{_actx.resume();}catch(e){} }
+  if(!_primed){ _primed=true; if(readAloud){ const h=$('#hint'); if(h) setTimeout(()=>speak(h.textContent),500); } }
+}
+['pointerdown','touchstart','keydown'].forEach(ev=>window.addEventListener(ev,onFirstGesture));
 function buildChips(){ const c=$('#chatChips'); c.innerHTML='';
   CHIPS.forEach(q=>{ const b=document.createElement('button'); b.textContent=q;
     b.addEventListener('click',()=>{ if(!chatBusy) sendChat(q); }); c.appendChild(b); }); }
