@@ -489,6 +489,27 @@ function makeCoral(colorHex,scale=1){
   }
   g.scale.setScalar(scale); return g;
 }
+/* soft swaying sea plants / anemones — bright colours for a vivid reef */
+function makeSeaPlant(colorHex,scale=1){
+  const g=new THREE.Group(); const col=new THREE.Color(colorHex);
+  const blades=5+Math.floor(Math.random()*5);
+  for(let i=0;i<blades;i++){
+    const h=0.8+Math.random()*1.3;
+    const m=new THREE.MeshStandardMaterial({color:col,roughness:.6,side:THREE.DoubleSide,flatShading:true});
+    const b=new THREE.Mesh(new THREE.ConeGeometry(0.07,h,5),m);
+    const ang=i/blades*Math.PI*2+Math.random();
+    b.position.set(Math.cos(ang)*0.12,h/2,Math.sin(ang)*0.12);
+    b.rotation.z=Math.cos(ang)*0.3; b.rotation.x=-Math.sin(ang)*0.3; g.add(b);
+  }
+  g.scale.setScalar(scale); return g;
+}
+/* rounded brain-coral dome */
+function makeBrainCoral(colorHex,scale=1){
+  const m=new THREE.MeshStandardMaterial({color:colorHex,roughness:.85,flatShading:true});
+  const d=new THREE.Mesh(new THREE.IcosahedronGeometry(0.5+Math.random()*0.35,1),m);
+  d.scale.y=0.55; d.position.y=0.2; const g=new THREE.Group(); g.add(d);
+  g.scale.setScalar(scale); return g;
+}
 function makeHouse(scale=1){
   const g=new THREE.Group();
   const wall=new THREE.Mesh(new THREE.BoxGeometry(1.6,1.2,1.4),
@@ -566,18 +587,32 @@ for(let i=0;i<14;i++){
     new THREE.MeshStandardMaterial({color:shellColors[i%shellColors.length],roughness:.6}));
   s.position.set(Math.cos(a)*rr,0.06,Math.sin(a)*rr); s.rotation.x=-Math.PI/2; s.scale.z=0.6; scene.add(s);
 }
-const baseReef=[[-6,-3],[-3,4],[4,-5],[6,3],[-1,7],[2,-8]];
-baseReef.forEach((p,i)=>{ const c=makeCoral(coralPalette[i%coralPalette.length],0.9);
-  c.position.set(p[0],SEABED_Y,p[1]); scene.add(c); });
-// reef fish that live underwater
+// --- a vibrant, densely-planted coral reef across the whole seabed ---
+const reefSway=[];  // soft plants that sway in the current
+function reefSpot(){ // random seabed spot, avoiding the very centre where the hero dives in
+  let x,z,d; do{ const a=Math.random()*Math.PI*2, rr=2.5+Math.random()*(WATER_R-3.5);
+    x=Math.cos(a)*rr; z=Math.sin(a)*rr; d=Math.hypot(x,z); }while(d<2.2);
+  return [x,z];
+}
+for(let i=0;i<24;i++){ const [x,z]=reefSpot();
+  const c=makeCoral(coralPalette[i%coralPalette.length],0.75+Math.random()*0.7);
+  c.position.set(x,SEABED_Y,z); c.rotation.y=Math.random()*6; scene.add(c); }
+for(let i=0;i<12;i++){ const [x,z]=reefSpot();
+  const pl=makeSeaPlant(coralPalette[(i*2)%coralPalette.length],0.8+Math.random()*0.7);
+  pl.position.set(x,SEABED_Y,z); pl.userData.ph=Math.random()*6; reefSway.push(pl); scene.add(pl); }
+for(let i=0;i<7;i++){ const [x,z]=reefSpot();
+  const dm=makeBrainCoral(coralPalette[(i*4)%coralPalette.length],0.8+Math.random()*0.8);
+  dm.position.set(x,SEABED_Y,z); scene.add(dm); }
+// reef fish that live underwater — more of them, varied sizes & colours
 const fishes=[];
-for(let i=0;i<9;i++){
-  const col=coralPalette[(i*3)%coralPalette.length];
+for(let i=0;i<18;i++){
+  const col=coralPalette[(i*3)%coralPalette.length], sc=0.7+Math.random()*0.8;
   const f=new THREE.Group(); const m=new THREE.MeshStandardMaterial({color:col,roughness:.5});
   const b=new THREE.Mesh(new THREE.SphereGeometry(0.22,8,8),m); b.scale.set(1.5,0.9,0.7);
   const t=new THREE.Mesh(new THREE.ConeGeometry(0.14,0.3,6),m); t.rotation.z=Math.PI/2; t.position.x=-0.34;
-  f.add(b,t); f.userData={r:3+Math.random()*9,sp:(0.2+Math.random()*0.3)*(Math.random()<.5?-1:1),
-    y:SEABED_Y+0.8+Math.random()*2.4,off:Math.random()*6,bob:Math.random()*6};
+  f.add(b,t); f.scale.setScalar(sc);
+  f.userData={r:3+Math.random()*10,sp:(0.18+Math.random()*0.35)*(Math.random()<.5?-1:1),
+    y:SEABED_Y+0.7+Math.random()*3,off:Math.random()*6,bob:Math.random()*6};
   scene.add(f); fishes.push(f);
 }
 // bubbles
