@@ -183,9 +183,9 @@
   <div class="l">🏮</div>
   <div class="lname">Lantern Cove</div>
   <div class="ltag">warming the lanterns…</div>
-  <div class="lver">v1.0 · vibrant reef</div>
+  <div class="lver">v1.1 · vibrant reef + peaceful underwater</div>
 </div>
-<div id="ver">v1.0</div>
+<div id="ver">v1.1</div>
 
 <div class="top">
   <div class="brand">Lantern Cove<small>Explore · Dive · Chat with Marina</small></div>
@@ -814,6 +814,8 @@ function tick(){
   waterMat.opacity = under?0.25:0.62;
   // muffle the ocean when we dive under
   if(window.__lc_ambFilter){ const f=window.__lc_ambFilter(); if(f) f.frequency.value += ((under?180:520)-f.frequency.value)*Math.min(1,dt*2); }
+  // peaceful underwater pad fades in when we dive, out at the surface
+  if(window.__lc_uwPad){ const pd=window.__lc_uwPad(); if(pd) pd.gain.value += ((under?0.05:0)-pd.gain.value)*Math.min(1,dt*1.2); }
 
   // reef fish swim
   fishes.forEach(f=>{ const a=t*f.userData.sp+f.userData.off;
@@ -991,7 +993,7 @@ document.querySelectorAll('[data-say]').forEach(el=>{
 });
 
 /* ---------- Ambient ocean (procedural — no audio files needed) ---------- */
-let _actx, _ambStarted=false, _ambFilter=null, _primed=false;
+let _actx, _ambStarted=false, _ambFilter=null, _uwPad=null, _primed=false;
 function startAmbient(){
   if(_ambStarted) return; _ambStarted=true;
   try{
@@ -1010,9 +1012,24 @@ function startAmbient(){
     const lfoG=_actx.createGain(); lfoG.gain.value=0.055;
     lfo.connect(lfoG); lfoG.connect(g.gain); lfo.start();
     _ambFilter=lp;
+    // --- peaceful underwater pad: a soft, calm chord that fades in only when diving ---
+    const pad=_actx.createGain(); pad.gain.value=0;
+    const padLp=_actx.createBiquadFilter(); padLp.type='lowpass'; padLp.frequency.value=420;
+    [110,164.81,220].forEach((freq,i)=>{           // A2 · E3 · A3 — an open, restful chord
+      const o=_actx.createOscillator(); o.type='sine'; o.frequency.value=freq;
+      const det=_actx.createOscillator(); det.type='sine'; det.frequency.value=freq*1.006; // gentle chorus
+      const og=_actx.createGain(); og.gain.value=(i===2?0.16:0.3);
+      o.connect(og); det.connect(og); og.connect(padLp); o.start(); det.start();
+    });
+    padLp.connect(pad); pad.connect(_actx.destination);
+    const plfo=_actx.createOscillator(); plfo.frequency.value=0.07;  // slow, meditative shimmer
+    const plfoG=_actx.createGain(); plfoG.gain.value=0.008;
+    plfo.connect(plfoG); plfoG.connect(pad.gain); plfo.start();
+    _uwPad=pad;
   }catch(e){ _ambStarted=false; }
 }
 window.__lc_ambFilter=()=>_ambFilter;
+window.__lc_uwPad=()=>_uwPad;
 function onFirstGesture(){
   startAmbient();
   if(_actx&&_actx.state==='suspended'){ try{_actx.resume();}catch(e){} }
