@@ -95,7 +95,7 @@
 
   /* Workshop = compact TOGGLE drawer: slides on/off, never covers the whole screen */
   #sheet{background:transparent;pointer-events:none;display:flex}
-  #sheet .sheet{pointer-events:auto;max-height:54vh;
+  #sheet .sheet{pointer-events:auto;max-height:88vh;
     transform:translateY(112%);transition:transform .34s cubic-bezier(.34,1.2,.5,1);
     box-shadow:0 -10px 34px rgba(60,40,15,.32)}
   #sheet.open .sheet{transform:translateY(0)}
@@ -183,9 +183,9 @@
   <div class="l">🏮</div>
   <div class="lname">Lantern Cove</div>
   <div class="ltag">warming the lanterns…</div>
-  <div class="lver">v1.5 · beach + cove balance</div>
+  <div class="lver">v1.6 · full workshop</div>
 </div>
-<div id="ver">v1.5</div>
+<div id="ver">v1.6</div>
 
 <div class="top">
   <div class="brand">Lantern Cove<small>Explore · Dive · Chat with Marina</small></div>
@@ -255,7 +255,7 @@ const $=s=>document.querySelector(s);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
 /* ---------------- craft economy (merge chains) ---------------- */
-const COLS=6, ROWS=6, CELLS=COLS*ROWS;
+const COLS=6, ROWS=4, CELLS=COLS*ROWS;
 const CHAINS={
   wood: {color:'wood', tiers:['🪵','🟫','🚪','🏠'], names:['Driftwood','Planks','Door','Beach House']},
   shell:{color:'shell',tiers:['🐚','🪸','💠','🏮'], names:['Shell','Coral','Sea Gem','Lantern']},
