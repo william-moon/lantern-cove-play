@@ -183,9 +183,9 @@
   <div class="l">🏮</div>
   <div class="lname">Lantern Cove</div>
   <div class="ltag">warming the lanterns…</div>
-  <div class="lver">v1.4 · nicer palms</div>
+  <div class="lver">v1.5 · beach + cove balance</div>
 </div>
-<div id="ver">v1.4</div>
+<div id="ver">v1.5</div>
 
 <div class="top">
   <div class="brand">Lantern Cove<small>Explore · Dive · Chat with Marina</small></div>
@@ -306,7 +306,7 @@ function save(){ try{localStorage.setItem('lanternCoveV4', JSON.stringify(S))}ca
 /* ========================================================================
    3D WORLD
    ======================================================================== */
-const WATER_R=16, SEABED_Y=-4.6, WORLD_R=44;
+const WATER_R=12, SEABED_Y=-4.6, WORLD_R=44;
 const DOCK_Z0=3.5, DOCK_Z1=20, DOCK_HW=1.7, DOCK_Y=0.55; // dock runs north (-Z→+Z) from beach into the cove
 
 const canvas=$('#game');
@@ -411,7 +411,7 @@ light.position.set(-6,0,-10.5); light.scale.setScalar(1.05); light.rotation.y=0.
 const sandMat=new THREE.MeshStandardMaterial({color:0xf6e7c4,roughness:1});   // pale tropical sand
 // beach wraps the cove like a horseshoe and OPENS to the open sea on the seaward (−Z) side —
 // a real cove, not a closed swimming pool. The ~140° gap faces the way the player looks out.
-const COVE_A0=Math.PI*160/180, COVE_LEN=Math.PI*220/180;   // land arc; gap centred on −Z (out to sea)
+const COVE_A0=Math.PI*128/180, COVE_LEN=Math.PI*284/180;   // land arc ~284°; a modest ~76° mouth opens to sea (−Z)
 const sand=new THREE.Mesh(new THREE.RingGeometry(WATER_R-1.5,WORLD_R,72,1,COVE_A0,COVE_LEN),sandMat);
 sand.rotation.x=-Math.PI/2; sand.position.y=0; scene.add(sand);
 // bright wet-sand shoreline + a white foam line where water meets beach (only along the land, not across the mouth)
