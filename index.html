@@ -5,30 +5,45 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#f2a65a">
 <title>Lantern Cove</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:ital,wght@0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --cream:#fff3de; --cream2:#ffe7bf; --ink:#173a3a; --amber:#f6a94b; --amber2:#e07c34;
-    --coral:#ff7e6b; --teal:#3fb0a6; --line:#e6c58f; --wood:#b5793f;
+    /* Golden Hour at the Cove — see Front-End-Design-Skill.md */
+    --cream:#fff4e2; --cream2:#ffe6bf; --ink:#243b4d;
+    --lantern:#ffcf6b; --glow:#ffb347; --amber:#f6a94b; --amber2:#df7a34;
+    --coral:#ff8264; --teal:#2f9fbf; --lagoon:#2f9fbf;
+    --line:#e9cc9a; --wood:#b5793f; --dusk:#2b3a67;
+    --disp:"Baloo 2",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --body:"Nunito",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;height:100%;overflow:hidden;background:#0d2b33;
-    font-family:"Fredoka",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--ink)}
+  html,body{margin:0;height:100%;overflow:hidden;background:#12233b;
+    font-family:var(--body);color:var(--ink)}
   #game{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+  /* cinematic vignette + warm top light over the whole scene */
+  #vignette{position:fixed;inset:0;z-index:2;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% 32%,rgba(0,0,0,0) 55%,rgba(20,30,50,.28) 100%),
+      linear-gradient(180deg,rgba(255,201,120,.14),rgba(255,201,120,0) 22%)}
 
   /* top HUD */
   .top{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);left:0;right:0;z-index:5;
     display:flex;align-items:center;justify-content:space-between;padding:0 12px;pointer-events:none}
-  .brand{font-weight:700;font-size:15px;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.45);letter-spacing:.3px}
-  .brand small{display:block;font-size:9px;font-weight:500;opacity:.85;letter-spacing:1.5px;text-transform:uppercase}
+  .brand{font-family:var(--disp);font-weight:800;font-size:19px;color:#fff2d6;line-height:1;
+    text-shadow:0 2px 10px rgba(120,60,10,.55),0 0 18px rgba(255,179,71,.35);letter-spacing:.2px}
+  .brand small{display:block;font-family:var(--body);font-size:8.5px;font-weight:700;opacity:.9;
+    letter-spacing:2px;text-transform:uppercase;margin-top:2px;color:#ffe7bf}
   .purse{display:flex;gap:7px}
-  .coin{pointer-events:auto;background:rgba(255,243,222,.94);border:1px solid var(--line);border-radius:14px;
-    padding:5px 11px;font-weight:700;font-size:14px;display:flex;align-items:center;gap:5px;
-    box-shadow:0 3px 8px rgba(0,0,0,.25)}
+  .coin{pointer-events:auto;background:linear-gradient(#fff7ea,#ffe7bf);border:1px solid var(--line);border-radius:14px;
+    padding:5px 11px;font-weight:800;font-size:14px;display:flex;align-items:center;gap:5px;color:var(--ink);
+    box-shadow:0 3px 8px rgba(80,50,10,.28),inset 0 1px 0 rgba(255,255,255,.6)}
 
   /* hint banner */
-  .hint{position:fixed;top:calc(env(safe-area-inset-top,0px) + 56px);left:50%;transform:translateX(-50%);
-    z-index:5;background:rgba(23,58,58,.82);color:#fff;padding:7px 15px;border-radius:16px;font-size:12.5px;
-    font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,.3);transition:opacity .5s;max-width:88vw;text-align:center}
+  .hint{position:fixed;top:calc(env(safe-area-inset-top,0px) + 58px);left:50%;transform:translateX(-50%);
+    z-index:5;background:rgba(36,59,77,.85);color:#fff4e2;padding:7px 15px;border-radius:16px;font-size:12.5px;
+    font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.32);transition:opacity .5s;max-width:88vw;text-align:center;
+    border:1px solid rgba(255,207,107,.35)}
 
   /* joystick */
   .stick{position:fixed;left:22px;bottom:calc(env(safe-area-inset-bottom,0px) + 26px);width:118px;height:118px;
@@ -59,8 +74,9 @@
     50%{box-shadow:0 5px 0 rgba(0,0,0,.22),0 0 18px rgba(246,169,75,.9)}}
 
   .work{position:fixed;left:20px;bottom:calc(env(safe-area-inset-bottom,0px) + 150px);z-index:6}
-  .workbtn{background:linear-gradient(#fff3de,#ffdca0);color:var(--ink);border:2px solid var(--line);
-    border-radius:16px;padding:9px 14px;font-size:13px;box-shadow:0 4px 0 #d9a86a,0 6px 12px rgba(0,0,0,.25)}
+  .workbtn{font-family:var(--disp);font-weight:700;background:linear-gradient(#fff7ea,#ffd9a0);color:var(--ink);
+    border:2px solid var(--line);border-radius:16px;padding:9px 14px;font-size:13.5px;
+    box-shadow:0 4px 0 #d9a86a,0 6px 12px rgba(0,0,0,.25)}
 
   /* Workshop slide-up panel */
   .sheetwrap{position:fixed;inset:0;z-index:20;background:rgba(15,35,40,.5);display:none;align-items:flex-end}
@@ -68,7 +84,7 @@
   .sheet{background:linear-gradient(#fff8ec,#fdeccd);width:100%;max-width:560px;margin:0 auto;
     border-radius:22px 22px 0 0;padding:14px 14px calc(env(safe-area-inset-bottom,0px) + 16px);
     max-height:86vh;overflow:auto;box-shadow:0 -6px 24px rgba(0,0,0,.35);border-top:3px solid var(--amber)}
-  .sheet h2{margin:2px 0 2px;font-size:17px;display:flex;align-items:center;gap:7px}
+  .sheet h2{font-family:var(--disp);font-weight:800;margin:2px 0 2px;font-size:19px;display:flex;align-items:center;gap:7px;color:#3a2e22}
   .sheet .sub{font-size:11.5px;opacity:.7;margin:0 0 10px}
   .sheet .x{float:right;font-size:22px;opacity:.5;background:none;border:0;line-height:1}
   .lab{font-size:10.5px;text-transform:uppercase;letter-spacing:1px;opacity:.55;font-weight:700;margin:12px 2px 6px}
@@ -133,15 +149,26 @@
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
   #loading{position:fixed;inset:0;z-index:50;display:flex;align-items:center;justify-content:center;
-    flex-direction:column;gap:10px;background:linear-gradient(#fbd9a0,#7ec8d8);color:#173a3a;font-weight:700}
-  #loading .l{font-size:34px;animation:bob 1.4s ease-in-out infinite}
-  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+    flex-direction:column;gap:4px;color:#3a2a2a;transition:opacity .6s;
+    background:radial-gradient(120% 80% at 50% 30%,#ffe3ab,#ffc27e 45%,#f2896b 82%,#c76a86)}
+  #loading .l{font-size:52px;filter:drop-shadow(0 0 22px rgba(255,179,71,.9));animation:bob 1.9s ease-in-out infinite}
+  #loading .lname{font-family:var(--disp);font-weight:800;font-size:30px;color:#4a2b1e;letter-spacing:.3px;
+    text-shadow:0 2px 0 rgba(255,255,255,.35)}
+  #loading .ltag{font-family:var(--body);font-weight:700;font-size:12px;letter-spacing:2px;text-transform:uppercase;
+    color:#7a4a35;opacity:.8}
+  #loading.hide{opacity:0}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-10px) rotate(3deg)}}
 </style>
 </head>
 <body>
 <canvas id="game"></canvas>
+<div id="vignette"></div>
 
-<div id="loading"><div class="l">🏮</div><div>Lantern Cove is waking up…</div></div>
+<div id="loading">
+  <div class="l">🏮</div>
+  <div class="lname">Lantern Cove</div>
+  <div class="ltag">warming the lanterns…</div>
+</div>
 
 <div class="top">
   <div class="brand">Lantern Cove<small>Explore · Dive · Chat with Marina</small></div>
@@ -274,18 +301,81 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(55,1,0.1,300);
 
-const SKY=new THREE.Color(0x8fd4e6), DEEP=new THREE.Color(0x1a7d94);
-scene.background=SKY.clone();
-scene.fog=new THREE.Fog(0x9fd8e6, 40, 120);
+// "Golden Hour at the Cove" — warm sunset above, teal-gold depths below.
+const SKY=new THREE.Color(0xffc98a), DEEP=new THREE.Color(0x1a7d94);
+scene.background=SKY.clone();          // clear colour (behind the sky dome; shown underwater)
+scene.fog=new THREE.Fog(0xffc79a, 46, 150);
 
-// warm sunset key light + soft fill
-const sun=new THREE.DirectionalLight(0xfff0d0,1.15); sun.position.set(-18,26,10); scene.add(sun);
-const hemi=new THREE.HemisphereLight(0xfff0d8,0x2a6b6b,0.75); scene.add(hemi);
-scene.add(new THREE.AmbientLight(0x557a7a,0.35));
+// --- gradient sky dome (zenith lilac → peach → warm rose at horizon) ---
+const skyGeo=new THREE.SphereGeometry(240,32,20);
+const zenith=new THREE.Color(0x9db4de), horizon=new THREE.Color(0xffb27a), midsky=new THREE.Color(0xffcf9a);
+const cols=[];
+for(let i=0;i<skyGeo.attributes.position.count;i++){
+  const y=skyGeo.attributes.position.getY(i)/240;      // -1..1
+  const c=new THREE.Color();
+  if(y>0.15) c.copy(midsky).lerp(zenith, Math.min(1,(y-0.15)/0.85));
+  else c.copy(horizon).lerp(midsky, Math.max(0,(y+0.25)/0.4));
+  cols.push(c.r,c.g,c.b);
+}
+skyGeo.setAttribute('color',new THREE.Float32BufferAttribute(cols,3));
+const sky=new THREE.Mesh(skyGeo,new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.BackSide,fog:false}));
+scene.add(sky);
 
-// sun disc
-const sunDisc=new THREE.Mesh(new THREE.SphereGeometry(4,16,16),
-  new THREE.MeshBasicMaterial({color:0xffe6a8})); sunDisc.position.set(-40,34,-60); scene.add(sunDisc);
+// --- low golden sun sitting over the cove, with a soft glow halo ---
+const sunPos=new THREE.Vector3(5,10,-95);
+const sunDisc=new THREE.Mesh(new THREE.SphereGeometry(6,20,20),
+  new THREE.MeshBasicMaterial({color:0xfff1c4,fog:false})); sunDisc.position.copy(sunPos); scene.add(sunDisc);
+function glowSprite(size,color,opacity){
+  const cv=document.createElement('canvas'); cv.width=cv.height=128;
+  const g=cv.getContext('2d'), grd=g.createRadialGradient(64,64,0,64,64,64);
+  grd.addColorStop(0,color); grd.addColorStop(1,'rgba(255,200,120,0)');
+  g.fillStyle=grd; g.fillRect(0,0,128,128);
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),
+    transparent:true,opacity,depthWrite:false,fog:false})); sp.scale.set(size,size,1); return sp;
+}
+const sunGlow=glowSprite(70,'rgba(255,224,150,0.9)',0.9); sunGlow.position.copy(sunPos); scene.add(sunGlow);
+
+// warm key light from the sun direction + soft sky fill
+const sun=new THREE.DirectionalLight(0xffdca0,1.25); sun.position.copy(sunPos).setY(24); scene.add(sun);
+const hemi=new THREE.HemisphereLight(0xffe7c2,0x2a5f6b,0.75); scene.add(hemi);
+scene.add(new THREE.AmbientLight(0x6a5a55,0.32));
+// a soft coral rim light from the opposite side for depth
+const rim=new THREE.DirectionalLight(0xff9a6b,0.35); rim.position.set(30,12,40); scene.add(rim);
+
+// --- low-poly drifting clouds ---
+const clouds=[];
+for(let i=0;i<5;i++){
+  const g=new THREE.Group(); const m=new THREE.MeshStandardMaterial({color:0xfff0dc,roughness:1,flatShading:true,fog:false});
+  const n=3+Math.floor(Math.random()*3);
+  for(let j=0;j<n;j++){ const p=new THREE.Mesh(new THREE.IcosahedronGeometry(2+Math.random()*2,0),m);
+    p.position.set(j*3-3+Math.random(),Math.random(),Math.random()*2); p.scale.y=0.55; g.add(p); }
+  g.position.set(-60+Math.random()*120, 34+Math.random()*14, -70-Math.random()*40);
+  g.userData.sp=0.4+Math.random()*0.5; scene.add(g); clouds.push(g);
+}
+
+// --- lighthouse across the cove: the signature landmark with a sweeping beam ---
+const light=new THREE.Group();
+const lhRock=new THREE.Mesh(new THREE.IcosahedronGeometry(2.2,1),
+  new THREE.MeshStandardMaterial({color:0x6a5f4d,roughness:1,flatShading:true}));
+lhRock.scale.set(1.3,0.5,1.3); lhRock.position.y=-0.2; light.add(lhRock);
+const lhTower=new THREE.Mesh(new THREE.CylinderGeometry(0.75,1.05,4.4,16),
+  new THREE.MeshStandardMaterial({color:0xfdf3e0,roughness:.85})); lhTower.position.y=2.4; light.add(lhTower);
+const lhBand=new THREE.Mesh(new THREE.CylinderGeometry(0.82,0.92,1.1,16),
+  new THREE.MeshStandardMaterial({color:0xe4574b,roughness:.8})); lhBand.position.y=2.4; light.add(lhBand);
+const lhGallery=new THREE.Mesh(new THREE.CylinderGeometry(0.95,0.95,0.35,16),
+  new THREE.MeshStandardMaterial({color:0x6a5f4d,roughness:.9})); lhGallery.position.y=4.7; light.add(lhGallery);
+const lhLamp=new THREE.Mesh(new THREE.CylinderGeometry(0.62,0.62,0.9,14),
+  new THREE.MeshStandardMaterial({color:0xffd36b,emissive:0xffb347,emissiveIntensity:1.4})); lhLamp.position.y=5.25; light.add(lhLamp);
+const lhRoof=new THREE.Mesh(new THREE.ConeGeometry(0.85,0.8,14),
+  new THREE.MeshStandardMaterial({color:0xe4574b,roughness:.8,flatShading:true})); lhRoof.position.y=6.05; light.add(lhRoof);
+light.add(new THREE.PointLight(0xffc46b,1.0,30).translateY(5.25));
+// the beam — a long additive cone that sweeps around
+const beacon=new THREE.Group(); beacon.position.y=5.25;
+const beam=new THREE.Mesh(new THREE.ConeGeometry(2.6,26,20,1,true),
+  new THREE.MeshBasicMaterial({color:0xffe4a8,transparent:true,opacity:0.14,side:THREE.DoubleSide,depthWrite:false,fog:false}));
+beam.rotation.z=Math.PI/2; beam.position.x=13; beacon.add(beam);
+light.add(beacon);
+light.position.set(-6,0,-10.5); light.scale.setScalar(1.05); light.rotation.y=0.6; scene.add(light);
 
 /* --- ground: sand everywhere, with a scooped lagoon in the middle --- */
 const sandMat=new THREE.MeshStandardMaterial({color:0xf0d9a0,roughness:1});
@@ -589,12 +679,15 @@ function tick(){
   camera.position.lerp(tmp,Math.min(1,dt*4));
   camera.lookAt(hero.position.x, hero.position.y+(under?0.5:1.0), hero.position.z);
 
-  // atmosphere: swap between sunny surface and blue depths
+  // atmosphere: golden-hour surface vs teal-gold depths
+  sky.visible=!under; sunDisc.visible=!under; sunGlow.visible=!under; light.visible=!under;
+  clouds.forEach(c=>{ c.visible=!under; c.position.x+=dt*c.userData.sp; if(c.position.x>72) c.position.x=-72; });
   const targetBg = under?DEEP:SKY;
   scene.background.lerp(targetBg,Math.min(1,dt*3));
   scene.fog.color.copy(scene.background);
-  scene.fog.near = under?3:40; scene.fog.far = under?46:120;
+  scene.fog.near = under?3:46; scene.fog.far = under?46:150;
   hemi.intensity = under?0.85:0.75;
+  beacon.rotation.y += dt*0.55;   // the lighthouse beam sweeps the cove
 
   // water waves
   for(let i=0;i<wPos.count;i++){
@@ -629,7 +722,7 @@ function tick(){
 }
 updatePlaceBtn();
 tick();
-$('#loading').style.display='none';
+{ const ld=$('#loading'); ld.classList.add('hide'); setTimeout(()=>ld.style.display='none',650); }
 
 /* ========================================================================
    WORKSHOP (craft) UI
