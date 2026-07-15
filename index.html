@@ -183,9 +183,9 @@
   <div class="l">🏮</div>
   <div class="lname">Lantern Cove</div>
   <div class="ltag">warming the lanterns…</div>
-  <div class="lver">v1.2 · follow-cam + day/night</div>
+  <div class="lver">v1.3 · open cove</div>
 </div>
-<div id="ver">v1.2</div>
+<div id="ver">v1.3</div>
 
 <div class="top">
   <div class="brand">Lantern Cove<small>Explore · Dive · Chat with Marina</small></div>
@@ -409,14 +409,16 @@ light.position.set(-6,0,-10.5); light.scale.setScalar(1.05); light.rotation.y=0.
 
 /* --- ground: sand everywhere, with a scooped lagoon in the middle --- */
 const sandMat=new THREE.MeshStandardMaterial({color:0xf6e7c4,roughness:1});   // pale tropical sand
-// beach is a ring around the open lagoon so the cove water shows through the middle
-const sand=new THREE.Mesh(new THREE.RingGeometry(WATER_R-1.5,WORLD_R,72),sandMat);
+// beach wraps the cove like a horseshoe and OPENS to the open sea on the seaward (−Z) side —
+// a real cove, not a closed swimming pool. The ~140° gap faces the way the player looks out.
+const COVE_A0=Math.PI*160/180, COVE_LEN=Math.PI*220/180;   // land arc; gap centred on −Z (out to sea)
+const sand=new THREE.Mesh(new THREE.RingGeometry(WATER_R-1.5,WORLD_R,72,1,COVE_A0,COVE_LEN),sandMat);
 sand.rotation.x=-Math.PI/2; sand.position.y=0; scene.add(sand);
-// bright wet-sand shoreline + a white foam ring where water meets beach
-const slope=new THREE.Mesh(new THREE.RingGeometry(WATER_R-1.5,WATER_R+1.5,72),
+// bright wet-sand shoreline + a white foam line where water meets beach (only along the land, not across the mouth)
+const slope=new THREE.Mesh(new THREE.RingGeometry(WATER_R-1.5,WATER_R+1.5,72,1,COVE_A0,COVE_LEN),
   new THREE.MeshStandardMaterial({color:0xf2ecd2,roughness:1}));
 slope.rotation.x=-Math.PI/2; slope.position.y=-0.03; scene.add(slope);
-const foam=new THREE.Mesh(new THREE.RingGeometry(WATER_R-1.1,WATER_R+0.5,72),
+const foam=new THREE.Mesh(new THREE.RingGeometry(WATER_R-1.1,WATER_R+0.5,72,1,COVE_A0,COVE_LEN),
   new THREE.MeshStandardMaterial({color:0xffffff,roughness:1,transparent:true,opacity:0.8}));
 foam.rotation.x=-Math.PI/2; foam.position.y=0.02; scene.add(foam);
 
@@ -434,11 +436,12 @@ scene.add(water);
 const wPos=waterGeo.attributes.position, wBase=Float32Array.from(wPos.array);
 
 /* --- open ocean stretching to the horizon (so looking out to sea matches a real beach) --- */
-const oceanGeo=new THREE.RingGeometry(WATER_R+6,230,80,1);
-const ocol=[], near=new THREE.Color(0x1ba9c9), farc=new THREE.Color(0x0d5f86);
+// inner radius = WATER_R so the sea meets the lagoon exactly at the cove mouth (and never covers the reef inside)
+const oceanGeo=new THREE.RingGeometry(WATER_R,230,96,1);
+const ocol=[], near=new THREE.Color(0x25bcd0), farc=new THREE.Color(0x0d5f86);
 for(let i=0;i<oceanGeo.attributes.position.count;i++){
   const x=oceanGeo.attributes.position.getX(i), y=oceanGeo.attributes.position.getY(i);
-  const r=Math.hypot(x,y), tt=clamp((r-(WATER_R+6))/(230-(WATER_R+6)),0,1);
+  const r=Math.hypot(x,y), tt=clamp((r-WATER_R)/(230-WATER_R),0,1);
   const c=near.clone().lerp(farc,Math.pow(tt,0.6)); ocol.push(c.r,c.g,c.b);
 }
 oceanGeo.setAttribute('color',new THREE.Float32BufferAttribute(ocol,3));
